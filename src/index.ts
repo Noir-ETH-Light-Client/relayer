@@ -5,6 +5,9 @@ import compression from "compression";
 import morgan from "morgan";
 import logger from "./logger.js";
 import mongoose from "mongoose";
+import { CronJob } from "cron";
+import { lcUpdate } from "./lc-update.js";
+import { getLCStore, getLCUpdate } from "./controller.js";
 
 dotenv.config();
 
@@ -18,7 +21,10 @@ class Server {
     // setupGlobalVariables();
   }
 
-  public routes(): void {}
+  public routes(): void {
+    this.app.use("/api/v1/store", getLCStore);
+    this.app.use("/api/v1/update/:page", getLCUpdate);
+  }
 
   public config(): void {
     this.app.set("port", process.env.PORT || 3000);
@@ -84,6 +90,17 @@ class Server {
 async function startServer(): Promise<void> {
   const server = new Server();
   server.start();
+  let cronJob = new CronJob('* * * * *', async () => {
+    try {
+      await lcUpdate();
+    } catch (e) {
+      console.error(e);
+    }
+  });
+
+  if (!cronJob.running) {
+    cronJob.start();
+  }
 }
 
 startServer();
