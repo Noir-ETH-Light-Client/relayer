@@ -3,7 +3,12 @@ import { LightClientHeaderModel } from "./LightClientHeader.js";
 import { SyncCommitteeModel } from "./SyncCommittee.js";
 import { LightClientUpdateObject } from "eth-lc-lib";
 
-export const LightClientUpdateModel = new mongoose.Schema<LightClientUpdateObject>({
+interface ExtendLightClientUpdateObject extends LightClientUpdateObject {
+    is_on_contract: Boolean
+}
+
+export const LightClientUpdateModel = new mongoose.Schema<ExtendLightClientUpdateObject>({
+    is_on_contract: Boolean,
     attested_header: LightClientHeaderModel,
     next_sync_committee: SyncCommitteeModel,
     next_sync_committee_branch: [String],
@@ -15,7 +20,6 @@ export const LightClientUpdateModel = new mongoose.Schema<LightClientUpdateObjec
     },
     signature_slot: String
 });
-
 
 
 export default mongoose.model("LightClientUpdateModel", LightClientUpdateModel);

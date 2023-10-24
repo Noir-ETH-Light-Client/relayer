@@ -6,11 +6,16 @@ import morgan from "morgan";
 import logger from "./logger.js";
 import mongoose from "mongoose";
 import { CronJob } from "cron";
-import { lcUpdate } from "./lc-update.js";
-import { getLCStore, getLCUpdate } from "./controller.js";
+import { lcUpdate, updateStatusLcUpdate } from "./lc-update.js";
+import { getLCProof, getLCStore, getLCUpdates } from "./controller.js";
+// import { boostrap } from "./boostrap.js";
+import { Contract, ethers } from "ethers";
+import artifact from "./abi/LightClientStore.json" assert { type: "json" };
 
 dotenv.config();
 
+export const provider: any = ethers.getDefaultProvider(process.env.PROVIDER || "https://goerli.infura.io/v3/");
+export const contract: Contract = new ethers.Contract(process.env.CONTRACTADDR || "0x2d2BF2cB1d727dBB7E5192b04ABD646b0CbEA15d", artifact.abi, provider);
 class Server {
   public app: express.Application;
   constructor() {
@@ -23,7 +28,8 @@ class Server {
 
   public routes(): void {
     this.app.use("/api/v1/store", getLCStore);
-    this.app.use("/api/v1/update/:page", getLCUpdate);
+    this.app.use("/api/v1/update/:signatureSlot", getLCUpdates);
+    this.app.use("/api/v1/proof/:lcUpdateId", getLCProof);
   }
 
   public config(): void {
@@ -74,8 +80,10 @@ class Server {
 
     const run = async () => {
       await mongoose.connect(process.env.MONGODB_URI!, {
-        keepAlive: true,
+        keepAlive: true
       });
+      // await boostrap();
+      // console.log('success')
     };
     run().catch((error) => console.error(error));
   }
@@ -92,6 +100,7 @@ async function startServer(): Promise<void> {
   server.start();
   let cronJob = new CronJob('* * * * *', async () => {
     try {
+      await updateStatusLcUpdate();
       await lcUpdate();
     } catch (e) {
       console.error(e);
