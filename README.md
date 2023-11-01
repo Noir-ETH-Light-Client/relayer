@@ -1,5 +1,9 @@
 # RELAYER
 
+## Prerequisite
+
+Node version: 18
+
 ## Run Code
 
 ```
